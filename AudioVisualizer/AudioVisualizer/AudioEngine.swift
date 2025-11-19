@@ -97,7 +97,7 @@ class AudioEngine: ObservableObject {
 
         do {
             let session = AVAudioSession.sharedInstance()
-            try session.setCategory(.playAndRecord, mode: .measurement, options: [.defaultToSpeaker, .allowBluetoothA2DP])
+            try session.setCategory(.playAndRecord, mode: .measurement, options: [.defaultToSpeaker, .mixWithOthers, .allowBluetoothA2DP])
             try session.setActive(true)
 
             // Get the actual sample rate
@@ -260,12 +260,23 @@ class AudioEngine: ObservableObject {
             // Reference level and scaling for good visual range
             let db = 20 * log10(max(avgMagnitude, 1e-10))
 
-            // Normalize: map roughly -60dB to 0dB to 0.0 to 1.0
-            let minDb: Float = -60
-            let maxDb: Float = 0
-            let normalized = (db - minDb) / (maxDb - minDb)
+            // Noise floor threshold - clamp values below this to zero
+            let noiseFloor: Float = -60
+            let maxDb: Float = -10  // Adjusted for typical music levels
 
-            bands[bandIndex] = max(0, min(1, normalized))
+            // If below noise floor, output zero
+            if db < noiseFloor {
+                bands[bandIndex] = 0
+            } else {
+                // Normalize with adjusted range
+                let normalized = (db - noiseFloor) / (maxDb - noiseFloor)
+
+                // Apply gain multiplier to boost meaningful signals
+                let gain: Float = 1.8
+                let boosted = normalized * gain
+
+                bands[bandIndex] = max(0, min(1, boosted))
+            }
         }
 
         return bands
