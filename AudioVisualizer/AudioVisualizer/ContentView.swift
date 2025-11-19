@@ -9,6 +9,7 @@ import SwiftUI
 
 struct ContentView: View {
     @StateObject private var audioEngine = AudioEngine()
+    @State private var sensitivity: Float = 1.0
 
     var body: some View {
         GeometryReader { geometry in
@@ -17,15 +18,44 @@ struct ContentView: View {
                 Color.black.ignoresSafeArea()
 
                 // Frequency bars
-                HStack(spacing: 4) {
-                    ForEach(0..<16, id: \.self) { index in
-                        FrequencyBar(
-                            amplitude: audioEngine.frequencyBands[index],
-                            maxHeight: geometry.size.height * 0.85
-                        )
+                VStack {
+                    HStack(spacing: 4) {
+                        ForEach(0..<16, id: \.self) { index in
+                            FrequencyBar(
+                                amplitude: audioEngine.frequencyBands[index],
+                                maxHeight: geometry.size.height * 0.75
+                            )
+                        }
                     }
+                    .padding(.horizontal, 8)
+
+                    Spacer()
+
+                    // Sensitivity slider
+                    VStack(spacing: 8) {
+                        Text("Sensitivity: \(String(format: "%.1f", sensitivity))x")
+                            .font(.system(size: 14, weight: .medium, design: .monospaced))
+                            .foregroundColor(.white.opacity(0.8))
+
+                        HStack {
+                            Text("0.5")
+                                .font(.system(size: 10))
+                                .foregroundColor(.white.opacity(0.5))
+
+                            Slider(value: $sensitivity, in: 0.5...3.0, step: 0.1)
+                                .tint(.white.opacity(0.6))
+                                .onChange(of: sensitivity) { _, newValue in
+                                    audioEngine.sensitivity = newValue
+                                }
+
+                            Text("3.0")
+                                .font(.system(size: 10))
+                                .foregroundColor(.white.opacity(0.5))
+                        }
+                    }
+                    .padding(.horizontal, 40)
+                    .padding(.bottom, 30)
                 }
-                .padding(.horizontal, 8)
             }
         }
         .ignoresSafeArea()
