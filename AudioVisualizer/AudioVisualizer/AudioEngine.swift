@@ -210,6 +210,12 @@ class AudioEngine: ObservableObject {
             }
         }
 
+        // Apply proper FFT scaling
+        let scaleFactor = 2.0 / Float(fftSize)
+        for i in 0..<magnitudes.count {
+            magnitudes[i] *= scaleFactor
+        }
+
         // Convert to dB and normalize
         let bands = calculateBands(from: magnitudes)
 
@@ -256,27 +262,20 @@ class AudioEngine: ObservableObject {
 
             let avgMagnitude = count > 0 ? sum / Float(count) : 0
 
-            // Convert to dB and normalize
-            // Reference level and scaling for good visual range
+            // Convert to dB (will be negative for magnitudes < 1.0)
             let db = 20 * log10(max(avgMagnitude, 1e-10))
 
-            // Noise floor threshold - clamp values below this to zero
-            let noiseFloor: Float = -60
-            let maxDb: Float = -10  // Adjusted for typical music levels
+            // Define dB range for visualization
+            let minDb: Float = -60  // Noise floor
+            let maxDb: Float = -10  // Loud sounds
 
-            // If below noise floor, output zero
-            if db < noiseFloor {
-                bands[bandIndex] = 0
-            } else {
-                // Normalize with adjusted range
-                let normalized = (db - noiseFloor) / (maxDb - noiseFloor)
+            // Clamp dB value to range
+            let clampedDb = max(minDb, min(maxDb, db))
 
-                // Apply gain multiplier to boost meaningful signals
-                let gain: Float = 1.8
-                let boosted = normalized * gain
+            // Normalize to 0.0-1.0
+            let normalized = (clampedDb - minDb) / (maxDb - minDb)
 
-                bands[bandIndex] = max(0, min(1, boosted))
-            }
+            bands[bandIndex] = normalized
         }
 
         return bands
