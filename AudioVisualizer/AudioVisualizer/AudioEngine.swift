@@ -38,7 +38,9 @@ class AudioEngine: ObservableObject {
     }
 
     deinit {
-        stop()
+        // Clean up audio engine synchronously without calling MainActor-isolated stop()
+        inputNode?.removeTap(onBus: 0)
+        audioEngine?.stop()
         if let setup = fftSetup {
             vDSP_DFT_DestroySetup(setup)
         }
@@ -95,7 +97,7 @@ class AudioEngine: ObservableObject {
 
         do {
             let session = AVAudioSession.sharedInstance()
-            try session.setCategory(.playAndRecord, mode: .measurement, options: [.defaultToSpeaker, .allowBluetooth])
+            try session.setCategory(.playAndRecord, mode: .measurement, options: [.defaultToSpeaker, .allowBluetoothA2DP])
             try session.setActive(true)
 
             // Get the actual sample rate
