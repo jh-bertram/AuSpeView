@@ -12,6 +12,9 @@ import Accelerate
 class AudioEngine: ObservableObject {
     @Published var frequencyBands: [Float] = Array(repeating: 0, count: 16)
 
+    // Sensitivity multiplier (applied after normalization)
+    var sensitivity: Float = 1.0
+
     private var audioEngine: AVAudioEngine?
     private var inputNode: AVAudioInputNode?
 
@@ -219,10 +222,14 @@ class AudioEngine: ObservableObject {
         // Convert to dB and normalize
         let bands = calculateBands(from: magnitudes)
 
+        // Get current sensitivity value
+        let currentSensitivity = sensitivity
+
         Task { @MainActor in
             // Smooth the values for visual appeal
             for i in 0..<16 {
-                let target = bands[i]
+                // Apply sensitivity multiplier after normalization
+                let target = min(1.0, bands[i] * currentSensitivity)
                 let current = frequencyBands[i]
                 // Smoothing: fast attack, slow release
                 if target > current {
