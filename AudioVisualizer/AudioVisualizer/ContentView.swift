@@ -21,6 +21,7 @@ struct ContentView: View {
     @State private var showControls: Bool = false
     @State private var visualizationMode: VisualizationMode = .digital
     @State private var mirrorMode: Bool = false
+    @State private var useLogarithmicFreq: Bool = true
 
     var body: some View {
         GeometryReader { geometry in
@@ -110,6 +111,17 @@ struct ContentView: View {
                                     .foregroundColor(.white.opacity(0.8))
                             }
                             .tint(.white.opacity(0.6))
+
+                            // Frequency Distribution Toggle
+                            Toggle(isOn: $useLogarithmicFreq) {
+                                Text("Logarithmic Freq")
+                                    .font(.system(size: 11, weight: .medium, design: .monospaced))
+                                    .foregroundColor(.white.opacity(0.8))
+                            }
+                            .tint(.white.opacity(0.6))
+                            .onChange(of: useLogarithmicFreq) { _, newValue in
+                                audioEngine.useLogarithmicDistribution = newValue
+                            }
 
                             // Sensitivity slider
                             VStack(spacing: 4) {
@@ -234,6 +246,7 @@ struct ContentView: View {
             audioEngine.minDB = minDB
             audioEngine.maxDB = maxDB
             audioEngine.trebleBoost = trebleBoost
+            audioEngine.useLogarithmicDistribution = useLogarithmicFreq
             audioEngine.requestPermissionAndStart()
         }
         .onDisappear {
