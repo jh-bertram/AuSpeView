@@ -35,7 +35,7 @@ struct ContentView: View {
                         Spacer()
 
                         VStack(spacing: 0) {
-                            // Top half - rotated 180° so bars extend UPWARD from center
+                            // Top half - vertically flipped so bars extend UPWARD from center
                             HStack(spacing: 16) {
                                 ForEach(0..<16, id: \.self) { index in
                                     FrequencyBar(
@@ -47,7 +47,7 @@ struct ContentView: View {
                                 }
                             }
                             .padding(.horizontal, 8)
-                            .rotationEffect(.degrees(180))
+                            .scaleEffect(x: 1, y: -1)
 
                             // Center baseline
                             Rectangle()
