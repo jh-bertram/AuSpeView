@@ -22,6 +22,13 @@ class AudioEngine: ObservableObject {
     // Frequency compensation (boost higher frequencies)
     var trebleBoost: Float = 1.5
 
+    // Frequency distribution mode
+    var useLogarithmicDistribution: Bool = true {
+        didSet {
+            calculateBandFrequencies()
+        }
+    }
+
     private var audioEngine: AVAudioEngine?
     private var inputNode: AVAudioInputNode?
 
@@ -77,16 +84,29 @@ class AudioEngine: ObservableObject {
 
     private func calculateBandFrequencies() {
         // Create 17 boundary frequencies for 16 bands
-        // Logarithmically distributed from 20Hz to 20kHz
         let minFreq: Float = 20.0
         let maxFreq: Float = 20000.0
         let numBands = 16
 
         bandFrequencies = []
-        for i in 0...numBands {
-            let ratio = Float(i) / Float(numBands)
-            let freq = minFreq * pow(maxFreq / minFreq, ratio)
-            bandFrequencies.append(freq)
+
+        if useLogarithmicDistribution {
+            // Logarithmic distribution - each band covers ~1 octave
+            // This spreads musical content evenly across all bars
+            // Band centers approximately: 25, 40, 63, 100, 160, 250, 400, 630, 1k, 1.6k, 2.5k, 4k, 6.3k, 10k, 16k Hz
+            for i in 0...numBands {
+                let ratio = Float(i) / Float(numBands)
+                let freq = minFreq * pow(maxFreq / minFreq, ratio)
+                bandFrequencies.append(freq)
+            }
+        } else {
+            // Linear distribution - equal Hz per band
+            // Most content compressed into first few bars (better for technical analysis)
+            let freqStep = (maxFreq - minFreq) / Float(numBands)
+            for i in 0...numBands {
+                let freq = minFreq + Float(i) * freqStep
+                bandFrequencies.append(freq)
+            }
         }
     }
 
