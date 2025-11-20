@@ -31,22 +31,11 @@ struct ContentView: View {
                 // Frequency bars
                 VStack {
                     if mirrorMode {
-                        // Mirror mode: symmetrical butterfly visualization
-                        VStack(spacing: 0) {
-                            // Top half (mirrored/flipped)
-                            HStack(spacing: 16) {
-                                ForEach(0..<16, id: \.self) { index in
-                                    FrequencyBar(
-                                        amplitude: audioEngine.frequencyBands[index],
-                                        maxHeight: geometry.size.height * (showControls ? 0.22 : 0.42),
-                                        mode: visualizationMode,
-                                        flipped: true
-                                    )
-                                }
-                            }
-                            .padding(.horizontal, 8)
+                        // Mirror mode: bars radiate OUTWARD from center
+                        Spacer()
 
-                            // Bottom half (normal)
+                        VStack(spacing: 0) {
+                            // Top half - rotated 180° so bars extend UPWARD from center
                             HStack(spacing: 16) {
                                 ForEach(0..<16, id: \.self) { index in
                                     FrequencyBar(
@@ -58,7 +47,28 @@ struct ContentView: View {
                                 }
                             }
                             .padding(.horizontal, 8)
+                            .rotationEffect(.degrees(180))
+
+                            // Center baseline
+                            Rectangle()
+                                .fill(Color.white.opacity(0.15))
+                                .frame(height: 1)
+
+                            // Bottom half - bars extend DOWNWARD from center
+                            HStack(spacing: 16) {
+                                ForEach(0..<16, id: \.self) { index in
+                                    FrequencyBar(
+                                        amplitude: audioEngine.frequencyBands[index],
+                                        maxHeight: geometry.size.height * (showControls ? 0.22 : 0.42),
+                                        mode: visualizationMode,
+                                        flipped: true
+                                    )
+                                }
+                            }
+                            .padding(.horizontal, 8)
                         }
+
+                        Spacer()
                     } else {
                         // Normal mode: bars from bottom
                         HStack(spacing: 16) {
