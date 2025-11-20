@@ -20,6 +20,7 @@ struct ContentView: View {
     @State private var trebleBoost: Float = 1.5
     @State private var showControls: Bool = false
     @State private var visualizationMode: VisualizationMode = .digital
+    @State private var mirrorMode: Bool = false
 
     var body: some View {
         GeometryReader { geometry in
@@ -29,16 +30,49 @@ struct ContentView: View {
 
                 // Frequency bars
                 VStack {
-                    HStack(spacing: 16) {
-                        ForEach(0..<16, id: \.self) { index in
-                            FrequencyBar(
-                                amplitude: audioEngine.frequencyBands[index],
-                                maxHeight: geometry.size.height * (showControls ? 0.50 : 0.9),
-                                mode: visualizationMode
-                            )
+                    if mirrorMode {
+                        // Mirror mode: symmetrical butterfly visualization
+                        VStack(spacing: 0) {
+                            // Top half (mirrored/flipped)
+                            HStack(spacing: 16) {
+                                ForEach(0..<16, id: \.self) { index in
+                                    FrequencyBar(
+                                        amplitude: audioEngine.frequencyBands[index],
+                                        maxHeight: geometry.size.height * (showControls ? 0.22 : 0.42),
+                                        mode: visualizationMode,
+                                        flipped: true
+                                    )
+                                }
+                            }
+                            .padding(.horizontal, 8)
+
+                            // Bottom half (normal)
+                            HStack(spacing: 16) {
+                                ForEach(0..<16, id: \.self) { index in
+                                    FrequencyBar(
+                                        amplitude: audioEngine.frequencyBands[index],
+                                        maxHeight: geometry.size.height * (showControls ? 0.22 : 0.42),
+                                        mode: visualizationMode,
+                                        flipped: false
+                                    )
+                                }
+                            }
+                            .padding(.horizontal, 8)
                         }
+                    } else {
+                        // Normal mode: bars from bottom
+                        HStack(spacing: 16) {
+                            ForEach(0..<16, id: \.self) { index in
+                                FrequencyBar(
+                                    amplitude: audioEngine.frequencyBands[index],
+                                    maxHeight: geometry.size.height * (showControls ? 0.50 : 0.9),
+                                    mode: visualizationMode,
+                                    flipped: false
+                                )
+                            }
+                        }
+                        .padding(.horizontal, 8)
                     }
-                    .padding(.horizontal, 8)
 
                     Spacer()
 
@@ -59,6 +93,14 @@ struct ContentView: View {
                                 .pickerStyle(.segmented)
                                 .colorMultiply(.white)
                             }
+
+                            // Mirror Mode Toggle
+                            Toggle(isOn: $mirrorMode) {
+                                Text("Mirror Mode")
+                                    .font(.system(size: 11, weight: .medium, design: .monospaced))
+                                    .foregroundColor(.white.opacity(0.8))
+                            }
+                            .tint(.white.opacity(0.6))
 
                             // Sensitivity slider
                             VStack(spacing: 4) {
@@ -195,6 +237,7 @@ struct FrequencyBar: View {
     let amplitude: Float
     let maxHeight: CGFloat
     let mode: VisualizationMode
+    var flipped: Bool = false
 
     // Animation state
     @State private var animatedAmplitude: CGFloat = 0
@@ -202,19 +245,32 @@ struct FrequencyBar: View {
     var body: some View {
         GeometryReader { geometry in
             VStack {
-                Spacer()
-
-                if mode == .digital {
-                    // Digital mode: smooth continuous bar
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(barGradient)
-                        .frame(
-                            width: geometry.size.width,
-                            height: max(4, animatedAmplitude * maxHeight)
-                        )
+                if flipped {
+                    // Flipped: bars grow downward from top
+                    if mode == .digital {
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(barGradientFlipped)
+                            .frame(
+                                width: geometry.size.width,
+                                height: max(4, animatedAmplitude * maxHeight)
+                            )
+                    } else {
+                        analogLEDBar(width: geometry.size.width, flipped: true)
+                    }
+                    Spacer()
                 } else {
-                    // Analog mode: 20 discrete LED boxes
-                    analogLEDBar(width: geometry.size.width)
+                    // Normal: bars grow upward from bottom
+                    Spacer()
+                    if mode == .digital {
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(barGradient)
+                            .frame(
+                                width: geometry.size.width,
+                                height: max(4, animatedAmplitude * maxHeight)
+                            )
+                    } else {
+                        analogLEDBar(width: geometry.size.width, flipped: false)
+                    }
                 }
             }
         }
@@ -226,7 +282,7 @@ struct FrequencyBar: View {
     }
 
     // Analog LED-style bar with 20 boxes
-    private func analogLEDBar(width: CGFloat) -> some View {
+    private func analogLEDBar(width: CGFloat, flipped: Bool = false) -> some View {
         let boxCount = 20
         let spacing: CGFloat = 3
         let totalSpacing = spacing * CGFloat(boxCount - 1)
@@ -234,15 +290,28 @@ struct FrequencyBar: View {
         let litBoxCount = Int(animatedAmplitude * CGFloat(boxCount))
 
         return VStack(spacing: spacing) {
-            // Draw boxes from top (index 19) to bottom (index 0)
-            ForEach((0..<boxCount).reversed(), id: \.self) { index in
-                let isLit = index < litBoxCount
-                let color = boxColor(for: index, isLit: isLit)
+            if flipped {
+                // Flipped: draw boxes from bottom (index 0) to top (index 19)
+                ForEach(0..<boxCount, id: \.self) { index in
+                    let isLit = index < litBoxCount
+                    let color = boxColor(for: index, isLit: isLit)
 
-                RoundedRectangle(cornerRadius: 3)
-                    .fill(color)
-                    .frame(width: width, height: boxHeight)
-                    .shadow(color: isLit ? color.opacity(0.8) : .clear, radius: isLit ? 8 : 0, x: 0, y: 0)
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(color)
+                        .frame(width: width, height: boxHeight)
+                        .shadow(color: isLit ? color.opacity(0.8) : .clear, radius: isLit ? 8 : 0, x: 0, y: 0)
+                }
+            } else {
+                // Normal: draw boxes from top (index 19) to bottom (index 0)
+                ForEach((0..<boxCount).reversed(), id: \.self) { index in
+                    let isLit = index < litBoxCount
+                    let color = boxColor(for: index, isLit: isLit)
+
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(color)
+                        .frame(width: width, height: boxHeight)
+                        .shadow(color: isLit ? color.opacity(0.8) : .clear, radius: isLit ? 8 : 0, x: 0, y: 0)
+                }
             }
         }
         .frame(height: maxHeight)
@@ -281,6 +350,22 @@ struct FrequencyBar: View {
             colors: [bottomColor, middleColor, topColor],
             startPoint: .bottom,
             endPoint: .top
+        )
+    }
+
+    // Flipped gradient for mirror mode (grows downward)
+    private var barGradientFlipped: LinearGradient {
+        let fillPercentage = Double(amplitude)
+
+        // Calculate colors based on thresholds
+        let bottomColor = barColor(for: 0)
+        let middleColor = barColor(for: fillPercentage * 0.5)
+        let topColor = barColor(for: fillPercentage)
+
+        return LinearGradient(
+            colors: [topColor, middleColor, bottomColor],
+            startPoint: .top,
+            endPoint: .bottom
         )
     }
 
