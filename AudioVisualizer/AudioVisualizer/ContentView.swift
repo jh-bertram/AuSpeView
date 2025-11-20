@@ -7,6 +7,11 @@
 
 import SwiftUI
 
+enum VisualizationMode: String, CaseIterable {
+    case digital = "Digital"
+    case analog = "Analog"
+}
+
 struct ContentView: View {
     @StateObject private var audioEngine = AudioEngine()
     @State private var sensitivity: Float = 1.0
@@ -14,6 +19,7 @@ struct ContentView: View {
     @State private var maxDB: Float = -30
     @State private var trebleBoost: Float = 1.5
     @State private var showControls: Bool = false
+    @State private var visualizationMode: VisualizationMode = .digital
 
     var body: some View {
         GeometryReader { geometry in
@@ -27,7 +33,8 @@ struct ContentView: View {
                         ForEach(0..<16, id: \.self) { index in
                             FrequencyBar(
                                 amplitude: audioEngine.frequencyBands[index],
-                                maxHeight: geometry.size.height * (showControls ? 0.55 : 0.9)
+                                maxHeight: geometry.size.height * (showControls ? 0.50 : 0.9),
+                                mode: visualizationMode
                             )
                         }
                     }
@@ -38,6 +45,21 @@ struct ContentView: View {
                     // Collapsible Controls
                     if showControls {
                         VStack(spacing: 10) {
+                            // Mode Picker
+                            VStack(spacing: 4) {
+                                Text("Visualization Mode")
+                                    .font(.system(size: 11, weight: .medium, design: .monospaced))
+                                    .foregroundColor(.white.opacity(0.8))
+
+                                Picker("Mode", selection: $visualizationMode) {
+                                    ForEach(VisualizationMode.allCases, id: \.self) { mode in
+                                        Text(mode.rawValue).tag(mode)
+                                    }
+                                }
+                                .pickerStyle(.segmented)
+                                .colorMultiply(.white)
+                            }
+
                             // Sensitivity slider
                             VStack(spacing: 4) {
                                 Text("Sensitivity: \(String(format: "%.1f", sensitivity))x")
@@ -172,6 +194,7 @@ struct ContentView: View {
 struct FrequencyBar: View {
     let amplitude: Float
     let maxHeight: CGFloat
+    let mode: VisualizationMode
 
     // Animation state
     @State private var animatedAmplitude: CGFloat = 0
@@ -181,13 +204,18 @@ struct FrequencyBar: View {
             VStack {
                 Spacer()
 
-                // The bar
-                RoundedRectangle(cornerRadius: 4)
-                    .fill(barGradient)
-                    .frame(
-                        width: geometry.size.width,
-                        height: max(4, animatedAmplitude * maxHeight)
-                    )
+                if mode == .digital {
+                    // Digital mode: smooth continuous bar
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(barGradient)
+                        .frame(
+                            width: geometry.size.width,
+                            height: max(4, animatedAmplitude * maxHeight)
+                        )
+                } else {
+                    // Analog mode: 10 discrete LED boxes
+                    analogLEDBar(width: geometry.size.width)
+                }
             }
         }
         .onChange(of: amplitude) { _, newValue in
@@ -197,7 +225,49 @@ struct FrequencyBar: View {
         }
     }
 
-    // Color gradient based on fill percentage
+    // Analog LED-style bar with 10 boxes
+    private func analogLEDBar(width: CGFloat) -> some View {
+        let boxCount = 10
+        let spacing: CGFloat = 3
+        let totalSpacing = spacing * CGFloat(boxCount - 1)
+        let boxHeight = (maxHeight - totalSpacing) / CGFloat(boxCount)
+        let litBoxCount = Int(animatedAmplitude * CGFloat(boxCount))
+
+        return VStack(spacing: spacing) {
+            // Draw boxes from top (index 9) to bottom (index 0)
+            ForEach((0..<boxCount).reversed(), id: \.self) { index in
+                let isLit = index < litBoxCount
+
+                RoundedRectangle(cornerRadius: 3)
+                    .fill(boxColor(for: index, isLit: isLit))
+                    .frame(width: width, height: boxHeight)
+                    .shadow(color: isLit ? boxColor(for: index, isLit: true).opacity(0.6) : .clear, radius: isLit ? 4 : 0)
+            }
+        }
+        .frame(height: maxHeight)
+    }
+
+    // Color for each box based on position
+    private func boxColor(for index: Int, isLit: Bool) -> Color {
+        if !isLit {
+            // Unlit: very dark gray
+            return Color(white: 0.1)
+        }
+
+        // Boxes 0-4 (bottom 5): Green
+        // Boxes 5-7 (middle 3): Yellow
+        // Boxes 8-9 (top 2): Red
+        switch index {
+        case 0...4:
+            return Color(red: 0, green: 1, blue: 0) // Green
+        case 5...7:
+            return Color(red: 1, green: 1, blue: 0) // Yellow
+        default:
+            return Color(red: 1, green: 0, blue: 0) // Red
+        }
+    }
+
+    // Color gradient based on fill percentage (for digital mode)
     private var barGradient: LinearGradient {
         let fillPercentage = Double(amplitude)
 
