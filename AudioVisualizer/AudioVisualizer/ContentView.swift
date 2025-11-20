@@ -17,7 +17,8 @@ struct ContentView: View {
     @State private var sensitivity: Float = 1.0
     @State private var minDB: Float = -80
     @State private var maxDB: Float = -30
-    @State private var trebleBoost: Float = 1.5
+    @State private var trebleBoost: Float = 3.0
+    @State private var bassCut: Float = 6.0
     @State private var showControls: Bool = false
     @State private var visualizationMode: VisualizationMode = .digital
     @State private var mirrorMode: Bool = false
@@ -192,6 +193,29 @@ struct ContentView: View {
                                 }
                             }
 
+                            // Bass Cut slider
+                            VStack(spacing: 4) {
+                                Text("Bass Cut: \(String(format: "%.1f", bassCut)) dB")
+                                    .font(.system(size: 11, weight: .medium, design: .monospaced))
+                                    .foregroundColor(.white.opacity(0.8))
+
+                                HStack {
+                                    Text("0")
+                                        .font(.system(size: 9))
+                                        .foregroundColor(.white.opacity(0.5))
+
+                                    Slider(value: $bassCut, in: 0.0...20.0, step: 1.0)
+                                        .tint(.white.opacity(0.6))
+                                        .onChange(of: bassCut) { _, newValue in
+                                            audioEngine.bassAttenuation = newValue
+                                        }
+
+                                    Text("20")
+                                        .font(.system(size: 9))
+                                        .foregroundColor(.white.opacity(0.5))
+                                }
+                            }
+
                             // Treble Boost slider
                             VStack(spacing: 4) {
                                 Text("Treble Boost: \(String(format: "%.1f", trebleBoost))x")
@@ -199,17 +223,17 @@ struct ContentView: View {
                                     .foregroundColor(.white.opacity(0.8))
 
                                 HStack {
-                                    Text("0.0")
+                                    Text("0")
                                         .font(.system(size: 9))
                                         .foregroundColor(.white.opacity(0.5))
 
-                                    Slider(value: $trebleBoost, in: 0.0...3.0, step: 0.1)
+                                    Slider(value: $trebleBoost, in: 0.0...10.0, step: 0.5)
                                         .tint(.white.opacity(0.6))
                                         .onChange(of: trebleBoost) { _, newValue in
                                             audioEngine.trebleBoost = newValue
                                         }
 
-                                    Text("3.0")
+                                    Text("10")
                                         .font(.system(size: 9))
                                         .foregroundColor(.white.opacity(0.5))
                                 }
@@ -246,6 +270,7 @@ struct ContentView: View {
             audioEngine.minDB = minDB
             audioEngine.maxDB = maxDB
             audioEngine.trebleBoost = trebleBoost
+            audioEngine.bassAttenuation = bassCut
             audioEngine.useLogarithmicDistribution = useLogarithmicFreq
             audioEngine.requestPermissionAndStart()
         }

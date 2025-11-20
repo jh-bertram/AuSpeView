@@ -20,7 +20,10 @@ class AudioEngine: ObservableObject {
     var maxDB: Float = -30  // Loud sounds
 
     // Frequency compensation (boost higher frequencies)
-    var trebleBoost: Float = 1.5
+    var trebleBoost: Float = 3.0
+
+    // Bass attenuation to reduce ambient noise in low frequencies
+    var bassAttenuation: Float = 6.0  // dB reduction for lowest bands
 
     // Frequency distribution mode
     var useLogarithmicDistribution: Bool = true {
@@ -279,6 +282,10 @@ class AudioEngine: ObservableObject {
         let binCount = magnitudes.count
         let frequencyResolution = sampleRate / Float(fftSize)
 
+        // Get current bass attenuation setting
+        let currentBassAttenuation = bassAttenuation
+        let bassCutBands = 4  // Affect bars 0-3 (sub-bass through bass)
+
         for bandIndex in 0..<16 {
             let lowFreq = bandFrequencies[bandIndex]
             let highFreq = bandFrequencies[bandIndex + 1]
@@ -300,7 +307,18 @@ class AudioEngine: ObservableObject {
                 count += 1
             }
 
-            let avgMagnitude = count > 0 ? sum / Float(count) : 0
+            var avgMagnitude = count > 0 ? sum / Float(count) : 0
+
+            // Apply bass cut to reduce ambient noise in low frequencies
+            if bandIndex < bassCutBands && currentBassAttenuation > 0 {
+                // Graduated attenuation: full cut on bar 0, tapering to zero at bar 4
+                let attenuationFactor = Float(bassCutBands - bandIndex) / Float(bassCutBands)
+                let attenuationDB = currentBassAttenuation * attenuationFactor
+
+                // Convert dB to linear scale and apply
+                let linearAttenuation = pow(10.0, -attenuationDB / 20.0)
+                avgMagnitude *= linearAttenuation
+            }
 
             // Convert to dB (will be negative for magnitudes < 1.0)
             let db = 20 * log10(max(avgMagnitude, 1e-10))
