@@ -362,7 +362,8 @@ struct FrequencyBar: View {
         )
     }
 
-    // Flipped gradient for mirror mode (grows downward)
+    // Flipped gradient for mirror mode (grows downward from center)
+    // Green at top (center baseline), red at bottom (outer edge)
     private var barGradientFlipped: LinearGradient {
         let fillPercentage = Double(amplitude)
 
@@ -372,7 +373,7 @@ struct FrequencyBar: View {
         let topColor = barColor(for: fillPercentage)
 
         return LinearGradient(
-            colors: [topColor, middleColor, bottomColor],
+            colors: [bottomColor, middleColor, topColor],
             startPoint: .top,
             endPoint: .bottom
         )
