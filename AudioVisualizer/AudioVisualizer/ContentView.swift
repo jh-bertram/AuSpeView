@@ -10,6 +10,8 @@ import SwiftUI
 struct ContentView: View {
     @StateObject private var audioEngine = AudioEngine()
     @State private var sensitivity: Float = 1.0
+    @State private var minDB: Float = -80
+    @State private var maxDB: Float = -30
 
     var body: some View {
         GeometryReader { geometry in
@@ -23,7 +25,7 @@ struct ContentView: View {
                         ForEach(0..<16, id: \.self) { index in
                             FrequencyBar(
                                 amplitude: audioEngine.frequencyBands[index],
-                                maxHeight: geometry.size.height * 0.75
+                                maxHeight: geometry.size.height * 0.65
                             )
                         }
                     }
@@ -31,36 +33,87 @@ struct ContentView: View {
 
                     Spacer()
 
-                    // Sensitivity slider
-                    VStack(spacing: 8) {
-                        Text("Sensitivity: \(String(format: "%.1f", sensitivity))x")
-                            .font(.system(size: 14, weight: .medium, design: .monospaced))
-                            .foregroundColor(.white.opacity(0.8))
+                    // Controls
+                    VStack(spacing: 12) {
+                        // Sensitivity slider
+                        VStack(spacing: 4) {
+                            Text("Sensitivity: \(String(format: "%.1f", sensitivity))x")
+                                .font(.system(size: 12, weight: .medium, design: .monospaced))
+                                .foregroundColor(.white.opacity(0.8))
 
-                        HStack {
-                            Text("0.5")
-                                .font(.system(size: 10))
-                                .foregroundColor(.white.opacity(0.5))
+                            HStack {
+                                Text("0.5")
+                                    .font(.system(size: 9))
+                                    .foregroundColor(.white.opacity(0.5))
 
-                            Slider(value: $sensitivity, in: 0.5...3.0, step: 0.1)
-                                .tint(.white.opacity(0.6))
-                                .onChange(of: sensitivity) { _, newValue in
-                                    audioEngine.sensitivity = newValue
-                                }
+                                Slider(value: $sensitivity, in: 0.5...3.0, step: 0.1)
+                                    .tint(.white.opacity(0.6))
+                                    .onChange(of: sensitivity) { _, newValue in
+                                        audioEngine.sensitivity = newValue
+                                    }
 
-                            Text("3.0")
-                                .font(.system(size: 10))
-                                .foregroundColor(.white.opacity(0.5))
+                                Text("3.0")
+                                    .font(.system(size: 9))
+                                    .foregroundColor(.white.opacity(0.5))
+                            }
+                        }
+
+                        // Min dB slider
+                        VStack(spacing: 4) {
+                            Text("Min dB: \(Int(minDB))")
+                                .font(.system(size: 12, weight: .medium, design: .monospaced))
+                                .foregroundColor(.white.opacity(0.8))
+
+                            HStack {
+                                Text("-120")
+                                    .font(.system(size: 9))
+                                    .foregroundColor(.white.opacity(0.5))
+
+                                Slider(value: $minDB, in: -120...(-20), step: 5)
+                                    .tint(.white.opacity(0.6))
+                                    .onChange(of: minDB) { _, newValue in
+                                        audioEngine.minDB = newValue
+                                    }
+
+                                Text("-20")
+                                    .font(.system(size: 9))
+                                    .foregroundColor(.white.opacity(0.5))
+                            }
+                        }
+
+                        // Max dB slider
+                        VStack(spacing: 4) {
+                            Text("Max dB: \(Int(maxDB))")
+                                .font(.system(size: 12, weight: .medium, design: .monospaced))
+                                .foregroundColor(.white.opacity(0.8))
+
+                            HStack {
+                                Text("-40")
+                                    .font(.system(size: 9))
+                                    .foregroundColor(.white.opacity(0.5))
+
+                                Slider(value: $maxDB, in: -40...0, step: 5)
+                                    .tint(.white.opacity(0.6))
+                                    .onChange(of: maxDB) { _, newValue in
+                                        audioEngine.maxDB = newValue
+                                    }
+
+                                Text("0")
+                                    .font(.system(size: 9))
+                                    .foregroundColor(.white.opacity(0.5))
+                            }
                         }
                     }
                     .padding(.horizontal, 40)
-                    .padding(.bottom, 30)
+                    .padding(.bottom, 20)
                 }
             }
         }
         .ignoresSafeArea()
         .statusBar(hidden: true)
         .onAppear {
+            audioEngine.minDB = minDB
+            audioEngine.maxDB = maxDB
             audioEngine.requestPermissionAndStart()
         }
         .onDisappear {

@@ -15,6 +15,10 @@ class AudioEngine: ObservableObject {
     // Sensitivity multiplier (applied after normalization)
     var sensitivity: Float = 1.0
 
+    // Configurable dB range for visualization
+    var minDB: Float = -80  // Noise floor (for ambient mic capture)
+    var maxDB: Float = -30  // Loud sounds
+
     private var audioEngine: AVAudioEngine?
     private var inputNode: AVAudioInputNode?
 
@@ -222,7 +226,7 @@ class AudioEngine: ObservableObject {
         // Convert to dB and normalize
         let bands = calculateBands(from: magnitudes)
 
-        // Get current sensitivity value
+        // Get current settings
         let currentSensitivity = sensitivity
 
         Task { @MainActor in
@@ -272,15 +276,11 @@ class AudioEngine: ObservableObject {
             // Convert to dB (will be negative for magnitudes < 1.0)
             let db = 20 * log10(max(avgMagnitude, 1e-10))
 
-            // Define dB range for visualization
-            let minDb: Float = -60  // Noise floor
-            let maxDb: Float = -10  // Loud sounds
-
-            // Clamp dB value to range
-            let clampedDb = max(minDb, min(maxDb, db))
+            // Clamp dB value to configurable range
+            let clampedDb = max(minDB, min(maxDB, db))
 
             // Normalize to 0.0-1.0
-            let normalized = (clampedDb - minDb) / (maxDb - minDb)
+            let normalized = (clampedDb - minDB) / (maxDB - minDB)
 
             bands[bandIndex] = normalized
         }
