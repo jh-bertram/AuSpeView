@@ -24,6 +24,16 @@ struct ContentView: View {
     @State private var mirrorMode: Bool = false
     @State private var useLogarithmicFreq: Bool = true
 
+    // Info alert states
+    @State private var showingVisModeInfo = false
+    @State private var showingMirrorInfo = false
+    @State private var showingLogFreqInfo = false
+    @State private var showingSensitivityInfo = false
+    @State private var showingMinDBInfo = false
+    @State private var showingMaxDBInfo = false
+    @State private var showingBassCutInfo = false
+    @State private var showingTrebleBoostInfo = false
+
     var body: some View {
         GeometryReader { geometry in
             ZStack {
@@ -92,9 +102,17 @@ struct ContentView: View {
                         VStack(spacing: 10) {
                             // Mode Picker
                             VStack(spacing: 4) {
-                                Text("Visualization Mode")
-                                    .font(.system(size: 11, weight: .medium, design: .monospaced))
-                                    .foregroundColor(.white.opacity(0.8))
+                                HStack {
+                                    Text("Visualization Mode")
+                                        .font(.system(size: 11, weight: .medium, design: .monospaced))
+                                        .foregroundColor(.white.opacity(0.8))
+                                    Spacer()
+                                    Button(action: { showingVisModeInfo = true }) {
+                                        Image(systemName: "info.circle")
+                                            .font(.system(size: 18))
+                                            .foregroundColor(.white.opacity(0.6))
+                                    }
+                                }
 
                                 Picker("Mode", selection: $visualizationMode) {
                                     ForEach(VisualizationMode.allCases, id: \.self) { mode in
@@ -106,29 +124,51 @@ struct ContentView: View {
                             }
 
                             // Mirror Mode Toggle
-                            Toggle(isOn: $mirrorMode) {
-                                Text("Mirror Mode")
-                                    .font(.system(size: 11, weight: .medium, design: .monospaced))
-                                    .foregroundColor(.white.opacity(0.8))
+                            HStack {
+                                Toggle(isOn: $mirrorMode) {
+                                    Text("Mirror Mode")
+                                        .font(.system(size: 11, weight: .medium, design: .monospaced))
+                                        .foregroundColor(.white.opacity(0.8))
+                                }
+                                .tint(.white.opacity(0.6))
+                                Button(action: { showingMirrorInfo = true }) {
+                                    Image(systemName: "info.circle")
+                                        .font(.system(size: 18))
+                                        .foregroundColor(.white.opacity(0.6))
+                                }
                             }
-                            .tint(.white.opacity(0.6))
 
                             // Frequency Distribution Toggle
-                            Toggle(isOn: $useLogarithmicFreq) {
-                                Text("Logarithmic Freq")
-                                    .font(.system(size: 11, weight: .medium, design: .monospaced))
-                                    .foregroundColor(.white.opacity(0.8))
-                            }
-                            .tint(.white.opacity(0.6))
-                            .onChange(of: useLogarithmicFreq) { _, newValue in
-                                audioEngine.useLogarithmicDistribution = newValue
+                            HStack {
+                                Toggle(isOn: $useLogarithmicFreq) {
+                                    Text("Logarithmic Freq")
+                                        .font(.system(size: 11, weight: .medium, design: .monospaced))
+                                        .foregroundColor(.white.opacity(0.8))
+                                }
+                                .tint(.white.opacity(0.6))
+                                .onChange(of: useLogarithmicFreq) { _, newValue in
+                                    audioEngine.useLogarithmicDistribution = newValue
+                                }
+                                Button(action: { showingLogFreqInfo = true }) {
+                                    Image(systemName: "info.circle")
+                                        .font(.system(size: 18))
+                                        .foregroundColor(.white.opacity(0.6))
+                                }
                             }
 
                             // Sensitivity slider
                             VStack(spacing: 4) {
-                                Text("Sensitivity: \(String(format: "%.1f", sensitivity))x")
-                                    .font(.system(size: 11, weight: .medium, design: .monospaced))
-                                    .foregroundColor(.white.opacity(0.8))
+                                HStack {
+                                    Text("Sensitivity: \(String(format: "%.1f", sensitivity))x")
+                                        .font(.system(size: 11, weight: .medium, design: .monospaced))
+                                        .foregroundColor(.white.opacity(0.8))
+                                    Spacer()
+                                    Button(action: { showingSensitivityInfo = true }) {
+                                        Image(systemName: "info.circle")
+                                            .font(.system(size: 18))
+                                            .foregroundColor(.white.opacity(0.6))
+                                    }
+                                }
 
                                 HStack {
                                     Text("0.5")
@@ -149,9 +189,17 @@ struct ContentView: View {
 
                             // Min dB slider
                             VStack(spacing: 4) {
-                                Text("Min dB: \(Int(minDB))")
-                                    .font(.system(size: 11, weight: .medium, design: .monospaced))
-                                    .foregroundColor(.white.opacity(0.8))
+                                HStack {
+                                    Text("Min dB: \(Int(minDB))")
+                                        .font(.system(size: 11, weight: .medium, design: .monospaced))
+                                        .foregroundColor(.white.opacity(0.8))
+                                    Spacer()
+                                    Button(action: { showingMinDBInfo = true }) {
+                                        Image(systemName: "info.circle")
+                                            .font(.system(size: 18))
+                                            .foregroundColor(.white.opacity(0.6))
+                                    }
+                                }
 
                                 HStack {
                                     Text("-120")
@@ -172,9 +220,17 @@ struct ContentView: View {
 
                             // Max dB slider
                             VStack(spacing: 4) {
-                                Text("Max dB: \(Int(maxDB))")
-                                    .font(.system(size: 11, weight: .medium, design: .monospaced))
-                                    .foregroundColor(.white.opacity(0.8))
+                                HStack {
+                                    Text("Max dB: \(Int(maxDB))")
+                                        .font(.system(size: 11, weight: .medium, design: .monospaced))
+                                        .foregroundColor(.white.opacity(0.8))
+                                    Spacer()
+                                    Button(action: { showingMaxDBInfo = true }) {
+                                        Image(systemName: "info.circle")
+                                            .font(.system(size: 18))
+                                            .foregroundColor(.white.opacity(0.6))
+                                    }
+                                }
 
                                 HStack {
                                     Text("-40")
@@ -195,9 +251,17 @@ struct ContentView: View {
 
                             // Bass Cut slider
                             VStack(spacing: 4) {
-                                Text("Bass Cut: \(String(format: "%.1f", bassCut)) dB")
-                                    .font(.system(size: 11, weight: .medium, design: .monospaced))
-                                    .foregroundColor(.white.opacity(0.8))
+                                HStack {
+                                    Text("Bass Cut: \(String(format: "%.1f", bassCut)) dB")
+                                        .font(.system(size: 11, weight: .medium, design: .monospaced))
+                                        .foregroundColor(.white.opacity(0.8))
+                                    Spacer()
+                                    Button(action: { showingBassCutInfo = true }) {
+                                        Image(systemName: "info.circle")
+                                            .font(.system(size: 18))
+                                            .foregroundColor(.white.opacity(0.6))
+                                    }
+                                }
 
                                 HStack {
                                     Text("0")
@@ -218,9 +282,17 @@ struct ContentView: View {
 
                             // Treble Boost slider
                             VStack(spacing: 4) {
-                                Text("Treble Boost: \(String(format: "%.1f", trebleBoost))x")
-                                    .font(.system(size: 11, weight: .medium, design: .monospaced))
-                                    .foregroundColor(.white.opacity(0.8))
+                                HStack {
+                                    Text("Treble Boost: \(String(format: "%.1f", trebleBoost))x")
+                                        .font(.system(size: 11, weight: .medium, design: .monospaced))
+                                        .foregroundColor(.white.opacity(0.8))
+                                    Spacer()
+                                    Button(action: { showingTrebleBoostInfo = true }) {
+                                        Image(systemName: "info.circle")
+                                            .font(.system(size: 18))
+                                            .foregroundColor(.white.opacity(0.6))
+                                    }
+                                }
 
                                 HStack {
                                     Text("0")
@@ -276,6 +348,47 @@ struct ContentView: View {
         }
         .onDisappear {
             audioEngine.stop()
+        }
+        // Info alerts
+        .alert("Visualization Mode", isPresented: $showingVisModeInfo) {
+            Button("Got it", role: .cancel) { }
+        } message: {
+            Text("Digital: Smooth gradient bars\nAnalog: Discrete LED-style boxes (20 per bar)\n\nChoose your preferred aesthetic!")
+        }
+        .alert("Mirror Mode", isPresented: $showingMirrorInfo) {
+            Button("Got it", role: .cancel) { }
+        } message: {
+            Text("Creates a symmetrical butterfly effect where bars radiate outward from the center of the screen in both directions.\n\nGreat for fullscreen music visualization!")
+        }
+        .alert("Logarithmic Frequency", isPresented: $showingLogFreqInfo) {
+            Button("Got it", role: .cancel) { }
+        } message: {
+            Text("Logarithmic: Each bar covers ~1 octave (how we hear music)\nLinear: Each bar covers equal Hz (technical/scientific)\n\nKeep logarithmic ON for music visualization!")
+        }
+        .alert("Sensitivity", isPresented: $showingSensitivityInfo) {
+            Button("Got it", role: .cancel) { }
+        } message: {
+            Text("Multiplies the final bar height after all processing.\n\nHigher = more movement\nLower = more stable\n\nAdjust after setting dB range.")
+        }
+        .alert("Min dB", isPresented: $showingMinDBInfo) {
+            Button("Got it", role: .cancel) { }
+        } message: {
+            Text("The quietest sound level that registers as 0% bar height.\n\nLower values (-90 to -100) = more sensitive\nHigher values (-60 to -70) = less sensitive\n\nFor ambient mic capture: try -80 to -90")
+        }
+        .alert("Max dB", isPresented: $showingMaxDBInfo) {
+            Button("Got it", role: .cancel) { }
+        } message: {
+            Text("The loudest sound level that registers as 100% bar height.\n\nLower values = bars hit max more easily\nHigher values = need louder sounds for full bars\n\nFor ambient mic capture: try -20 to -30")
+        }
+        .alert("Bass Cut", isPresented: $showingBassCutInfo) {
+            Button("Got it", role: .cancel) { }
+        } message: {
+            Text("Reduces the left 3-4 bars (bass frequencies) to minimize constant activity from ambient room noise.\n\n0 dB = no reduction\n10 dB = moderate reduction\n20 dB = strong reduction\n\nUseful when bars are always lit from air sounds.")
+        }
+        .alert("Treble Boost", isPresented: $showingTrebleBoostInfo) {
+            Button("Got it", role: .cancel) { }
+        } message: {
+            Text("Amplifies the right 8 bars (high frequencies) to make them more responsive. Music naturally has more bass energy.\n\n1-3 = subtle boost\n5-7 = strong boost\n8-10 = extreme boost\n\nIncrease if right bars are too quiet.")
         }
     }
 }
