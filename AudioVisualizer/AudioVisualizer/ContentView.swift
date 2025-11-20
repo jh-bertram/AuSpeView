@@ -29,7 +29,7 @@ struct ContentView: View {
 
                 // Frequency bars
                 VStack {
-                    HStack(spacing: 4) {
+                    HStack(spacing: 16) {
                         ForEach(0..<16, id: \.self) { index in
                             FrequencyBar(
                                 amplitude: audioEngine.frequencyBands[index],
@@ -213,7 +213,7 @@ struct FrequencyBar: View {
                             height: max(4, animatedAmplitude * maxHeight)
                         )
                 } else {
-                    // Analog mode: 10 discrete LED boxes
+                    // Analog mode: 20 discrete LED boxes
                     analogLEDBar(width: geometry.size.width)
                 }
             }
@@ -225,42 +225,43 @@ struct FrequencyBar: View {
         }
     }
 
-    // Analog LED-style bar with 10 boxes
+    // Analog LED-style bar with 20 boxes
     private func analogLEDBar(width: CGFloat) -> some View {
-        let boxCount = 10
+        let boxCount = 20
         let spacing: CGFloat = 3
         let totalSpacing = spacing * CGFloat(boxCount - 1)
         let boxHeight = (maxHeight - totalSpacing) / CGFloat(boxCount)
         let litBoxCount = Int(animatedAmplitude * CGFloat(boxCount))
 
         return VStack(spacing: spacing) {
-            // Draw boxes from top (index 9) to bottom (index 0)
+            // Draw boxes from top (index 19) to bottom (index 0)
             ForEach((0..<boxCount).reversed(), id: \.self) { index in
                 let isLit = index < litBoxCount
+                let color = boxColor(for: index, isLit: isLit)
 
                 RoundedRectangle(cornerRadius: 3)
-                    .fill(boxColor(for: index, isLit: isLit))
+                    .fill(color)
                     .frame(width: width, height: boxHeight)
-                    .shadow(color: isLit ? boxColor(for: index, isLit: true).opacity(0.6) : .clear, radius: isLit ? 4 : 0)
+                    .shadow(color: isLit ? color.opacity(0.8) : .clear, radius: isLit ? 8 : 0, x: 0, y: 0)
             }
         }
         .frame(height: maxHeight)
     }
 
-    // Color for each box based on position
+    // Color for each box based on position (20 boxes)
     private func boxColor(for index: Int, isLit: Bool) -> Color {
         if !isLit {
             // Unlit: very dark gray
             return Color(white: 0.1)
         }
 
-        // Boxes 0-4 (bottom 5): Green
-        // Boxes 5-7 (middle 3): Yellow
-        // Boxes 8-9 (top 2): Red
+        // Boxes 0-9 (bottom 10): Green
+        // Boxes 10-14 (middle 5): Yellow
+        // Boxes 15-19 (top 5): Red
         switch index {
-        case 0...4:
+        case 0...9:
             return Color(red: 0, green: 1, blue: 0) // Green
-        case 5...7:
+        case 10...14:
             return Color(red: 1, green: 1, blue: 0) // Yellow
         default:
             return Color(red: 1, green: 0, blue: 0) // Red
