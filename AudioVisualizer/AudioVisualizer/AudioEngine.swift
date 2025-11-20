@@ -19,6 +19,9 @@ class AudioEngine: ObservableObject {
     var minDB: Float = -80  // Noise floor (for ambient mic capture)
     var maxDB: Float = -30  // Loud sounds
 
+    // Frequency compensation (boost higher frequencies)
+    var trebleBoost: Float = 1.5
+
     private var audioEngine: AVAudioEngine?
     private var inputNode: AVAudioInputNode?
 
@@ -228,12 +231,18 @@ class AudioEngine: ObservableObject {
 
         // Get current settings
         let currentSensitivity = sensitivity
+        let currentTrebleBoost = trebleBoost
 
         Task { @MainActor in
             // Smooth the values for visual appeal
             for i in 0..<16 {
-                // Apply sensitivity multiplier after normalization
-                let target = min(1.0, bands[i] * currentSensitivity)
+                // Apply frequency-dependent boost (compensate for bass-heavy spectrum)
+                let frequencyPosition = Float(i) / 15.0  // 0.0 to 1.0
+                let boost = pow(frequencyPosition, currentTrebleBoost) * currentTrebleBoost
+                let compensatedAmplitude = bands[i] * (1.0 + boost)
+
+                // Apply sensitivity multiplier after compensation
+                let target = min(1.0, compensatedAmplitude * currentSensitivity)
                 let current = frequencyBands[i]
                 // Smoothing: fast attack, slow release
                 if target > current {
